@@ -63,7 +63,7 @@ UKF::UKF() {
   lambda_ = 3 - n_x_;
 
   ///* predicted sigma points matrix
-  Xsig_pred_  = MatrixXd(n_x, 2 * n_aug_ + 1);
+  Xsig_pred_  = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
   ///* Weights of sigma points
   weights_ = VectorXd(2 * n_aug_ + 1);
@@ -115,14 +115,14 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       Convert radar from polar to cartesian coordinates and initialize state.
       */
     
-      double rho = measurement_pack.raw_measurements_(0);
-      double psi = measurement_pack.raw_measurements_(1);
-      double rho_dot = measurement_pack.raw_measurements_(2);
+      double rho = meas_package.raw_measurements_(0);
+      double psi = meas_package.raw_measurements_(1);
+      double rho_dot = meas_package.raw_measurements_(2);
       double p_x = rho * cos(psi);
       double p_y = rho * sin(psi);
       double v_x = rho_dot * cos(psi);
       double v_y = rho_dot * sin(psi);
-      double v = sqrt(vx*vx + vy*vy);
+      double v = sqrt(v_x*v_x + v_y*v_y);
       double psi_dot = atan2(vy, vx);
 
       if (p_x < 0.0001 && p_y < 0.0001) {
@@ -131,10 +131,10 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
       x_ << p_x,p_y,v,0,0;
     }
-    else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+    else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       cout << "UKF : First measurement LIDAR" << endl;
-      double p_x = measurement_pack.raw_measurements_(0);
-      double p_y = measurement_pack.raw_measurements_(1);
+      double p_x = meas_package.raw_measurements_(0);
+      double p_y = meas_package.raw_measurements_(1);
 
       if (p_x < 0.0001 && p_y < 0.0001) {
         p_x = p_y = 0.001;
@@ -202,11 +202,12 @@ void UKF::Prediction(double delta_t) {
   for (int i = 0; i< n_aug_; i++)
   {
     Xsig_aug.col(i+1)       = x_aug + sqrt(lambda_+ n_aug_) * L.col(i);
-    Xsig_aug.col(i+1+n_aug) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
+    Xsig_aug.col(i+1+n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
   }
   //-------------------------------------------------------------
   // Prediction of Sigma Points
   //-------------------------------------------------------------
+  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
   for (int i = 0; i< 2*n_aug_+1; i++)
   {
     //extract values for better readability
@@ -251,25 +252,25 @@ void UKF::Prediction(double delta_t) {
   }
 
   // set weights
-  double weight_0 = lambda/(lambda+n_aug);
-  weights(0) = weight_0;
-  for (int i=1; i<2*n_aug+1; i++) {  //2n+1 weights
-    double weight = 0.5/(n_aug+lambda);
-    weights(i) = weight;
+  double weight_0 = lambda_/(lambda_ + n_aug_);
+  weights_(0) = weight_0;
+  for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights
+    double weight = 0.5/(n_aug_ + lambda_);
+    weights_(i) = weight;
   }
 
   //predicted state mean
-  x.fill(0.0);
-  for (int i = 0; i < 2 * n_aug + 1; i++) {  //iterate over sigma points
-    x = x+ weights(i) * Xsig_pred.col(i);
+  x_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    x_ = x_ + weights_(i) * Xsig_pred.col(i);
   }
 
   //predicted state covariance matrix
-  P.fill(0.0);
-  for (int i = 0; i < 2 * n_aug + 1; i++) {  //iterate over sigma points
+  P_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x;
+    VectorXd x_diff = Xsig_pred.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
@@ -302,7 +303,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //create matrix with sigma points in measurement space
   MatrixXd Zsig = MatrixXd(n_z_, 2 * n_aug_ + 1);
 
-  for (int i = 0; i < 2 * n_aug + 1; i++) {
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     //extract values for better readability
     double p_x = Xsig_aug(0,i);
     double p_y = Xsig_aug(1,i);
@@ -315,14 +316,14 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
    //mean predicted measurement
   VectorXd z_pred = VectorXd(n_z_);
   z_pred.fill(0.0);
-  for (int i=0; i < 2*n_aug+1; i++) {
+  for (int i=0; i < 2*n_aug_+1; i++) {
       z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
   //measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z_, n_z_);
   S.fill(0.0);
-  for (int i = 0; i < n_sig_; i++) {  //2n+1 simga points
+  for (int i = 0; i < 2*n_aug_+1; i++) {  //2n+1 simga points
     //residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
 
@@ -358,7 +359,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x;
+    VectorXd x_diff = Xsig_pred.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
@@ -414,7 +415,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   //create matrix with sigma points in measurement space
   MatrixXd Zsig = MatrixXd(n_z_, 2 * n_aug_ + 1);
 
-  for (int i = 0; i < 2 * n_aug + 1; i++) {
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     //extract values for better readability
     double p_x = Xsig_aug(0,i);
     double p_y = Xsig_aug(1,i);
@@ -434,14 +435,14 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   //mean predicted measurement
   VectorXd z_pred = VectorXd(n_z_);
   z_pred.fill(0.0);
-  for (int i=0; i < 2*n_aug+1; i++) {
+  for (int i=0; i < 2*n_aug_+1; i++) {
       z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
   //measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z_, n_z_);
   S.fill(0.0);
-  for (int i = 0; i < n_sig_; i++) {  //2n+1 simga points
+  for (int i = 0; i < 2*n_aug_+1; i++) {  //2n+1 simga points
     //residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
 
@@ -460,7 +461,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // -----------------------------------------------------------------
   
   // Radar measurement vector
-  VectorXd z = VectorXd(n_z);
+  VectorXd z = VectorXd(n_z_);
   z << meas_package.raw_measurements_(0), meas_package.raw_measurements_(1), meas_package.raw_measurements_(2);
 
   
@@ -478,7 +479,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x;
+    VectorXd x_diff = Xsig_pred.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
