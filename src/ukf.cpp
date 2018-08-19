@@ -56,16 +56,16 @@ UKF::UKF() {
   ///* State dimension
   n_x_ = 5;
 
-  ///* Augmented state dimension
+  // Augmented state dimension
   n_aug_ = n_x_ + 2;
 
-  ///* Sigma point spreading parameter
+  // Sigma point spreading parameter
   lambda_ = 3 - n_x_;
 
-  ///* predicted sigma points matrix
+  // predicted sigma points matrix
   Xsig_pred_  = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
-  ///* Weights of sigma points
+  // Weights of sigma points
   weights_ = VectorXd(2 * n_aug_ + 1);
   weights_.fill(0.5 / (n_aug_ + lambda_));
   weights_(0) = lambda_/(lambda_ + n_aug_);
@@ -123,7 +123,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       double v_x = rho_dot * cos(psi);
       double v_y = rho_dot * sin(psi);
       double v = sqrt(v_x*v_x + v_y*v_y);
-      double psi_dot = atan2(vy, vx);
+      //double psi_dot = atan2(v_y, v_x);
 
       if (p_x < 0.0001 && p_y < 0.0001) {
         p_x = p_y = 0.001;
@@ -244,11 +244,11 @@ void UKF::Prediction(double delta_t) {
     yawd_p = yawd_p + nu_yawdd*delta_t;
 
     //write predicted sigma point into right column
-    Xsig_pred(0,i) = px_p;
-    Xsig_pred(1,i) = py_p;
-    Xsig_pred(2,i) = v_p;
-    Xsig_pred(3,i) = yaw_p;
-    Xsig_pred(4,i) = yawd_p;
+    Xsig_pred_(0,i) = px_p;
+    Xsig_pred_(1,i) = py_p;
+    Xsig_pred_(2,i) = v_p;
+    Xsig_pred_(3,i) = yaw_p;
+    Xsig_pred_(4,i) = yawd_p;
   }
 
   // set weights
@@ -262,7 +262,7 @@ void UKF::Prediction(double delta_t) {
   //predicted state mean
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    x_ = x_ + weights_(i) * Xsig_pred.col(i);
+    x_ = x_ + weights_(i) * Xsig_pred_.col(i);
   }
 
   //predicted state covariance matrix
@@ -270,7 +270,7 @@ void UKF::Prediction(double delta_t) {
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x_;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
@@ -359,7 +359,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x_;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
@@ -479,7 +479,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x_;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
