@@ -103,10 +103,10 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     x_ << 1, 1, 1, 1, 0;
 
     P_ << 0.15, 0, 0, 0, 0,
-               0, 0.15, 0, 0, 0,
-               0,    0, 1, 0, 0,
-               0,    0, 0, 1, 0,
-               0,    0, 0, 0, 1;
+               0, 1, 0, 0, 0,
+               0, 0, 1, 0, 0,
+               0, 0, 0, 1, 0,
+               0, 0, 0, 0, 1;
 
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
       cout << "UKF : First measurement RADAR" << endl;
