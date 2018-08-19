@@ -182,7 +182,7 @@ void UKF::Prediction(double delta_t) {
   //create augmented state covariance
   MatrixXd P_aug = MatrixXd(n_aug_,n_aug_);
   //create sigma point matrix
-  MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+  Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
 
   x_aug.fill(0.0);
   x_aug.head(n_x_) = x_;
