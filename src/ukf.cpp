@@ -25,10 +25,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 1.8; //30
+  std_a_ = 2.4; //30
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 1.3; //30
+  std_yawdd_ = 1.8; //30
   
   //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
   // Laser measurement noise standard deviation position1 in m
@@ -129,7 +129,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         p_x = p_y = 0.001;
       }
 
-      x_ << p_x,p_y,v,0,0;
+      x_ << p_x,p_y,0,0,0;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       cout << "UKF : First measurement LIDAR" << endl;
