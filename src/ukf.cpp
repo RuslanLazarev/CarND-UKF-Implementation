@@ -125,20 +125,20 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       double v = sqrt(v_x*v_x + v_y*v_y);
       //double psi_dot = atan2(v_y, v_x);
 
-      if (p_x < 0.0001 && p_y < 0.0001) {
-        p_x = p_y = 0.001;
-      }
+      //if (p_x < 0.0001 && p_y < 0.0001) {
+      //  p_x = p_y = 0.001;
+      //}
 
-      x_ << p_x,p_y,0,0,0;
+      x_ << p_x,p_y,v,0,0;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       cout << "UKF : First measurement LIDAR" << endl;
       double p_x = meas_package.raw_measurements_(0);
       double p_y = meas_package.raw_measurements_(1);
 
-      if (p_x < 0.0001 && p_y < 0.0001) {
-        p_x = p_y = 0.001;
-      }
+      //if (p_x < 0.0001 && p_y < 0.0001) {
+      //  p_x = p_y = 0.001;
+      //}
 
       x_ << p_x, p_y, 0, 0, 0;
     }
@@ -251,14 +251,6 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_(4,i) = yawd_p;
   }
 
-  // set weights
-  double weight_0 = lambda_/(lambda_ + n_aug_);
-  weights_(0) = weight_0;
-  for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights
-    double weight = 0.5/(n_aug_ + lambda_);
-    weights_(i) = weight;
-  }
-
   //predicted state mean
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
@@ -268,7 +260,6 @@ void UKF::Prediction(double delta_t) {
   //predicted state covariance matrix
   P_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
