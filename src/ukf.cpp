@@ -2,6 +2,8 @@
 #include "Eigen/Dense"
 #include <iostream>
 
+#define EPS 0.001
+
 using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -125,9 +127,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       double v = sqrt(v_x*v_x + v_y*v_y);
       //double psi_dot = atan2(v_y, v_x);
 
-      //if (p_x < 0.0001 && p_y < 0.0001) {
-      //  p_x = p_y = 0.001;
-      //}
+      if (p_x < EPS) {
+        p_x = EPS;
+      }
+      if (p_y < EPS) {
+        p_y = EPS;
+      }
 
       x_ << p_x,p_y,v,0,0;
     }
@@ -136,9 +141,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       double p_x = meas_package.raw_measurements_(0);
       double p_y = meas_package.raw_measurements_(1);
 
-      //if (p_x < 0.0001 && p_y < 0.0001) {
-      //  p_x = p_y = 0.001;
-      //}
+      if (p_x < EPS) {
+        p_x = EPS;
+      }
+      if (p_y < EPS) {
+        p_y = EPS;
+      }
 
       x_ << p_x, p_y, 0, 0, 0;
     }
@@ -223,7 +231,7 @@ void UKF::Prediction(double delta_t) {
     double px_p, py_p;
 
     //avoid division by zero
-    if (fabs(yawd) > 0.001) {
+    if (fabs(yawd) > EPS) {
         px_p = p_x + v/yawd * ( sin (yaw + yawd*delta_t) - sin(yaw));
         py_p = p_y + v/yawd * ( cos(yaw) - cos(yaw+yawd*delta_t) );
     }
@@ -419,7 +427,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     // measurement model
     Zsig(0,i) = sqrt(p_x*p_x + p_y*p_y);                        //r
     Zsig(1,i) = atan2(p_y,p_x);                                 //phi
-    Zsig(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
+    Zsig(2,i) = (p_x*v1 + p_y*v2 ) / std::max(EPS, sqrt(p_x*p_x + p_y*p_y));   //r_dot
 
   }
 
