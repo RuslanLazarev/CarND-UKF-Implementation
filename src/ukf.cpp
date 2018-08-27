@@ -27,7 +27,7 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 3; //30
+  std_a_ = 1; //30
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = M_PI/4; //30
@@ -62,7 +62,7 @@ UKF::UKF() {
   n_aug_ = n_x_ + 2;
 
   // Sigma point spreading parameter
-  lambda_ = 3 - n_x_;
+  lambda_ = 3 - n_aug_;
 
   // predicted sigma points matrix
   Xsig_pred_  = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -219,13 +219,13 @@ void UKF::Prediction(double delta_t) {
   for (int i = 0; i< 2*n_aug_+1; i++)
   {
     //extract values for better readability
-    double p_x = Xsig_aug(0,i);
-    double p_y = Xsig_aug(1,i);
-    double v = Xsig_aug(2,i);
-    double yaw = Xsig_aug(3,i);
-    double yawd = Xsig_aug(4,i);
-    double nu_a = Xsig_aug(5,i);
-    double nu_yawdd = Xsig_aug(6,i);
+    const double p_x = Xsig_aug(0,i);
+    const double p_y = Xsig_aug(1,i);
+    const double v = Xsig_aug(2,i);
+    const double yaw = Xsig_aug(3,i);
+    const double yawd = Xsig_aug(4,i);
+    const double nu_a = Xsig_aug(5,i);
+    const double nu_yawdd = Xsig_aug(6,i);
 
     //predicted state values
     double px_p, py_p;
@@ -300,17 +300,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   // -----------------------------------------------------------------
 
   //create matrix with sigma points in measurement space
-  MatrixXd Zsig = MatrixXd(n_z_, 2 * n_aug_ + 1);
-
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
-    //extract values for better readability
-    double p_x = Xsig_aug(0,i);
-    double p_y = Xsig_aug(1,i);
-
-    // measurement model
-    Zsig(0,i) = p_x;
-    Zsig(1,i) = p_y;
-  }
+  MatrixXd Zsig = Xsig_pred_.block(0,0,n_z_, 2 * n_aug_ + 1);
 
    //mean predicted measurement
   VectorXd z_pred = VectorXd(n_z_);
@@ -382,8 +372,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
 
-  std::cout << "x = \n" << x_ << std::endl;
-  std::cout << "P = \n" << P_ << std::endl;
+  std::cout << "After Lidar: x = \n" << x_ << std::endl;
+  std::cout << "After Lidar: P = \n" << P_ << std::endl;
 
 
 
@@ -502,8 +492,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   NIS_radar_ = z_diff.transpose() * S.inverse() * z_diff;
 
-  std::cout << "x = \n" << x_ << std::endl;
-  std::cout << "P = \n" << P_ << std::endl;
+  std::cout << "After Radar: x = \n" << x_ << std::endl;
+  std::cout << "After Radar: P = \n" << P_ << std::endl;
 
 }
 
